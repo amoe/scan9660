@@ -1,0 +1,71 @@
+scan9660 - the manual
+---------------------
+
+Many people use CDs as backup media despite their obvious frailty.  As
+this format becomes ubiquitous, more and more CDs will break.  As long
+as the initial path tables are preserved, it is usually possible to
+recover a sane filesystem using tools like ddrescue, even if some
+files  have holes in the data.
+
+However, it is possible for path tables to be destroyed.  This
+happened to one of my CDs.  In this case there is no way of knowing
+where any file on the disk begins and ends, despite being able to
+possibly see the files using a hex editor.  That is, data is stored
+end-to-end on the disk.
+
+Obviously in this case, since there is no information on file offsets
+and sizes, the only possible way to proceed is to extract all data
+on the CD into files based on the sector. For instance, take a 700M cd.
+The max sectors is (2^20*700)/2048 = 358400.  Therefore pad to six digits:
+
+000001.data
+000002.data
+.... many more ...
+045987.data
+045988.data
+
+And so on.  The user will then have to manually identify these
+sectors.
+
+This is extremely un-useful.  In fact, minus the consistent naming, it can
+(almost) be done with split(1) from coreutils.
+
+This is the situation taken to its most extreme, however.  In
+practice, even if a lot of your disk is destroyed, you will likely have some
+directory records left over.  These could be used to identify files.
+
+Since we have no definite means of knowing whether a sector S is file
+data or a directory record, we must take an educated guess.  scan9660
+uses a system of heuristics to find the probability of a sector being
+a directory record.  If it is above a threshold, 
+
+If you have a few weeks to spend ddrescueing a broken disc, I doubt
+time is critical.  Therefore speed was not a concern in the design of
+this program.
+
+Questions:
+  Does file data straddle sector boundaries?
+    It seems that it would not because directory records only specify:
+      sector number
+      file length
+    Since 2048 = 2kb, it's possible that makers specified that files
+    less than that could waste space at end of sector.  In this case
+    we have a lot more clues about where stuff is.
+
+    Hypothesis can easily be tested:
+      Open file in hex editor, find definite file start, check if it
+      is on sector boundary.
+      Here is one: address 0x04e3f800 / 0x800 = 40063 decimal.
+      Previous file is on 04e3f000 / 800 = 40062 decimal.
+
+      So YES, files are aligned on sector boundaries.
+
+      Must use blob SRFI to translate stuff.
+
+      Remember, once we have identified a directory record, loop
+      through the sector reading them.
+
+      There are lots of sectors that contain identical numbers.  These
+      will be both endian, obviously.  However they are unlikely to be useful.
+      A possible restriction is that decoded value must be divisible
+      by 2048.
