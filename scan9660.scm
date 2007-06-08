@@ -39,12 +39,19 @@
   (loop 0))
 
 (define (process-sector sector)
-  (say
-      (format "~a: ~a (~a)  -> ~a"
-        (:buffer sector)
-        (:length sector)
-        (:number sector)
-        (apply-heuristics sector))))
+  (let ((p (apply-heuristics sector)))
+    (when (= p 1)
+      (say
+        (format "~a (~a): ~a  -> ~a"
+          (:number sector)
+          (:length sector)
+          p
+          (info (:buffer sector)))))))
+
+(define (info buffer)
+  (format "data address: ~a, length: ~a"
+    (buffer-slice buffer 2 8)
+    (buffer-slice buffer 10 8)))
 
 (define *heuristics*
   (list
@@ -66,7 +73,22 @@
     (lambda (buf) (in-range? (buffer-ref buf 20) 1 31))
     (lambda (buf) (in-range? (buffer-ref buf 21) 0 23))
     (lambda (buf) (in-range? (buffer-ref buf 22) 0 59))
-    (lambda (buf) (in-range? (buffer-ref buf 23) 0 59))))
+    (lambda (buf) (in-range? (buffer-ref buf 23) 0 59))
+    
+    ; Normal file or directory
+    (lambda (buf)
+      (let ((flag (buffer-ref buf 25)))
+        (or (zero? flag) (= flag 2))))
+
+    ; Interleaving (all zeroes)
+    (lambda (buf) (zero? (buffer-ref buf 26)))
+    (lambda (buf) (zero? (buffer-ref buf 27)))
+
+    ; both endian one: 01 00 00 01
+    (lambda (buf) (= (buffer-ref buf 28) 1))
+    (lambda (buf) (zero? (buffer-ref buf 29)))
+    (lambda (buf) (zero? (buffer-ref buf 30)))
+    (lambda (buf) (= (buffer-ref buf 31) 1))))
 
 ; Inclusive range test
 (define (in-range? x start end)
