@@ -49,9 +49,10 @@
           (info (:buffer sector)))))))
 
 (define (info buffer)
-  (format "data address: ~a, length: ~a"
+  (format "data address: ~a, length: ~a, idlen: ~a"
     (buffer-slice buffer 2 8)
-    (buffer-slice buffer 10 8)))
+    (buffer-slice buffer 10 8)
+    (buffer-ref buffer 32)))
 
 (define *heuristics*
   (list
@@ -100,12 +101,15 @@
     (receive (le be) (split-at lst 4)
       (list= = le (reverse be)))))
 
+(define (bedw->integer bedw)
+  ; Use the big endian representation only
+  (take-right bedw 4))
+
 ; Apply heuristics one by one to sector
 ; Return probability
 (define (apply-heuristics sector)
   (/
-    (count identity
-      (map (cut <> (:buffer sector)) *heuristics*))
+    (count (cut <> (:buffer sector)) *heuristics*)
     (length *heuristics*)))
 
 (define (directory-record? buf)
@@ -114,7 +118,9 @@
 
 (define (classify buffer) #t)
 
-(define (split-directory-records buffer) #t)
+(define (split-directory-records buffer)
+  ; Algorithm:  The identifier length is stored at byte 32 (zero-based).
+  #t)
 
 (define (buffer-slice buf offset length)
   (if (zero? length)
@@ -129,4 +135,32 @@
 
 (define (inc x) (+ x 1))
 
-(define (identity x) x)
+(define (riastradh-1)
+  (let ((a #xDE) (b #xAD))
+    (number->string
+      (+ (* a (expt 2 16)) b) 16)))
+
+(define (bedw->integer bedw)
+  (define (loop bedw factor)
+    (if (null? (cdr bedw))
+      (car bedw)
+      (+ (arithmetic-shift (car bedw) factor)
+         (loop (cdr bedw) (/ factor 2)))))
+
+  (loop bedw (* (length bedw) 8)))
+
+(define (arithmetic-shift integer exponent)
+  (* integer (expt 2 exponent)))
+
+;; < amoe> can anyone give me a search term for the algorithm to make integers from octets i mentioned above?
+;; < Riastradh> sarahbot: eval (let ((a #xDE) (b #xAD)) (number->string (+ (* a (expt 2 16)) b) 16))
+;; < sarahbot> "de00ad"
+;; < Riastradh> sarahbot: eval (let ((a #xDE) (b #xAD)) (number->string (+ (* a (expt 2 4)) b) 16))
+;; < sarahbot> "e8d"
+;; < amoe> aha, i think i see
+;; < Riastradh> amoe, ignoring the second one (where I meant `8', not `4'), does that give you an idea?
+;; < amoe> yes, it makes sense
+;; < amoe> thanks riastradh
+;; < Riastradh> amoe, now, (ARITHMETIC-SHIFT integer exponent) = (* integer (EXPT 2 exponent)). BITWISE-IOR is the bitwise inclusive-or, which would work just as well as + if the two integers are disjoint.
+;; *pjd* nudges amoe in the direction of fold
+;; *amoe* scurries away
