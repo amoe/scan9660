@@ -24,9 +24,9 @@
 
 (define (scan9660 path)
   (call-with-binary-input-file path
-    (cut for-each-buffer process-sector <>)))
+    (cut for-each-sector process-sector <>)))
 
-(define (for-each-buffer proc port)
+(define (for-each-sector proc port)
   (define (loop address)
     (let ((n (read-block *buffer* 0 *sector-size* port)))
       (cond
@@ -41,18 +41,45 @@
 (define (process-sector sector)
   (let ((p (apply-heuristics sector)))
     (when (= p 1)
-      (say
-        (format "~a (~a): ~a  -> ~a"
-          (:number sector)
-          (:length sector)
-          p
-          (info (:buffer sector)))))))
+      (print-indented 0 (format "Sector: ~a" (:number sector)))
+      (print-indented 0 (format "Length: ~a" (:length sector)))
+      (print-indented 0 (format "Heuristic response: ~a" p))
+
+      (for-each process-directory-record
+        (split-directory-records (:buffer sector))))))
+
+(define (process-directory-record record)
+  (print-indented 1
+    (format "Identifier: ~a"
+      (extract-identifier record))))
 
 (define (info buffer)
-  (format "data address: ~a, length: ~a, idlen: ~a"
-    (buffer-slice buffer 2 8)
-    (buffer-slice buffer 10 8)
-    (buffer-ref buffer 32)))
+  (let ((records (split-directory-records buffer)))
+    (format "identifiers: ~s"
+      (map extract-identifier records))))
+
+(define (split-directory-records buf)
+  (define (loop start)
+    (let ((len (buffer-ref buf start)))
+      (if (zero? len)
+        '()
+        (cons
+          (buffer-slice buf start len)
+          (loop (+ start len))))))
+
+  (loop 0))
+
+(define (print-indented level msg)
+  (define (generate-indent level)
+    (if (zero? level) "" (string-append "  " (generate-indent (dec level)))))
+
+  (say (format "~a~a" (generate-indent level) msg)))
+
+
+(define (extract-identifier directory-record)
+  (let ((len (list-ref directory-record 32)))
+    (list->string
+      (map integer->char (list-slice directory-record 33 len)))))
 
 (define *heuristics*
   (list
@@ -101,10 +128,6 @@
     (receive (le be) (split-at lst 4)
       (list= = le (reverse be)))))
 
-(define (bedw->integer bedw)
-  ; Use the big endian representation only
-  (take-right bedw 4))
-
 ; Apply heuristics one by one to sector
 ; Return probability
 (define (apply-heuristics sector)
@@ -118,29 +141,27 @@
 
 (define (classify buffer) #t)
 
-(define (split-directory-records buffer)
-  ; Algorithm:  The identifier length is stored at byte 32 (zero-based).
-  #t)
-
 (define (buffer-slice buf offset length)
   (if (zero? length)
     '()
     (cons
       (buffer-ref buf offset)
-      (buffer-slice buf (+ offset 1) (- length 1)))))
+      (buffer-slice buf (inc offset) (dec length)))))
 
 (define (say msg)
   (display msg)
   (newline))
 
 (define (inc x) (+ x 1))
+(define (dec x) (- x 1))
 
-(define (riastradh-1)
-  (let ((a #xDE) (b #xAD))
-    (number->string
-      (+ (* a (expt 2 16)) b) 16)))
+; Integer conversions, thanks riastradh
 
-(define (bedw->integer bedw)
+(define (both-endian-double-word->integer bedw)
+  ; Use the big endian representation only
+  (big-endian-double-word->integer (take-right bedw 4)))
+
+(define (big-endian-double-word->integer bedw)
   (define (loop bedw factor)
     (if (null? (cdr bedw))
       (car bedw)
@@ -151,6 +172,9 @@
 
 (define (arithmetic-shift integer exponent)
   (* integer (expt 2 exponent)))
+
+(define (list-slice lst start length)
+  (take (drop lst start) length))
 
 ;; < amoe> can anyone give me a search term for the algorithm to make integers from octets i mentioned above?
 ;; < Riastradh> sarahbot: eval (let ((a #xDE) (b #xAD)) (number->string (+ (* a (expt 2 16)) b) 16))
