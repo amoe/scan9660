@@ -49,10 +49,12 @@
         (split-directory-records (:buffer sector))))))
 
 (define (process-directory-record record)
+  (print-indented 1 (format "Identifier: ~s" (extract-identifier record)))
   (print-indented 1
-    (format "Identifier: ~a"
-      (extract-identifier record))))
-
+    (format "Starting sector: ~a" (extract-start record)))
+  (print-indented 1
+    (format "Length in bytes: ~a" (extract-length record))))
+  
 (define (info buffer)
   (let ((records (split-directory-records buffer)))
     (format "identifiers: ~s"
@@ -68,6 +70,12 @@
           (loop (+ start len))))))
 
   (loop 0))
+
+(define (extract-start directory-record)
+  (both-endian-double-word->integer (list-slice directory-record 2 8)))
+
+(define (extract-length directory-record)
+  (both-endian-double-word->integer (list-slice directory-record 10 8)))
 
 (define (print-indented level msg)
   (define (generate-indent level)
