@@ -1,6 +1,7 @@
 (module heuristic
   (apply-heuristics)
 
+  (import srfi-1)
   (import srfi-26)
   (import buffers)
 
@@ -14,16 +15,17 @@
   (define (finalize)
     (set! table (reverse table)))
 
-  (define (apply-heuristics buffer)
+  (define (apply-heuristics sector)
     (/
-      (count (cute <> buffer) table)
+      (count (cute <> sector) table)
       (length table)))
 
   (define (byte-heuristic address pred?)
-    (lambda (buf)
-      (if (< (dec (buffer-length buf)) address)
-        (error "not enough buffered data to apply heuristic")
-        (pred? (buffer-ref buf address)))))
+    (lambda (sector)
+      (if (< (dec (:length sector)) address)
+        (error "not enough buffered data to apply heuristic: byte ~a needed"
+          address)
+        (pred? (buffer-ref (:buffer sector) address)))))
   
   ; record length
   (add (byte-heuristic 0 even?))

@@ -1,5 +1,6 @@
 (require-library 'sisc/libs/srfi/srfi-1)
 (require-library 'sisc/libs/srfi/srfi-8)
+(require-library 'sisc/libs/srfi/srfi-9)
 (require-library 'sisc/libs/srfi/srfi-26)
 
 (import lib)
