@@ -1,9 +1,7 @@
 (module heuristic
-  (table)
-
-  (import data)
-
+  ; Record length
   (define record-length (byte-heuristic 0 even?))
+
   (define extended-attribute-record-length (byte-heuristic 1 zero?))
 
   (define month  (byte-heuristic 19 (cute in-range? <> 1 12)))
@@ -24,10 +22,4 @@
   (define volume-sequence-0 (byte-heuristic 28 (cute = <> 1)))
   (define volume-sequence-1 (byte-heuristic 29 zero?))
   (define volume-sequence-2 (byte-heuristic 30 zero?))
-  (define volume-sequence-4 (byte-heuristic 31 (cute = <> 1)))
-
-  (define (byte-heuristic address fn)
-    (lambda (buf)
-      (fn (buffer-ref buf address))))
-
-  (define table '()))
+  (define volume-sequence-4 (byte-heuristic 31 (cute = <> 1))))
