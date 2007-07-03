@@ -1,25 +1,60 @@
 (module heuristic
-  ; Record length
-  (define record-length (byte-heuristic 0 even?))
+  (apply-heuristics)
 
-  (define extended-attribute-record-length (byte-heuristic 1 zero?))
+  (import srfi-26)
+  (import buffers)
 
-  (define month  (byte-heuristic 19 (cute in-range? <> 1 12)))
-  (define day    (byte-heuristic 20 (cute in-range? <> 1 31)))
-  (define hour   (byte-heuristic 21 (cute in-range? <> 0 23)))
-  (define minute (byte-heuristic 22 (cute in-range? <> 0 59)))
-  (define second (byte-heuristic 23 (cute in-range? <> 0 59)))
+  (import lib)
+  
+  (define table '())
 
-  ; normal file or directory
-  (define flags
+  (define (add heuristic)
+    (set! table (cons heuristic table)))
+
+  (define (finalize)
+    (set! table (reverse table)))
+
+  (define (apply-heuristics buffer)
+    (/
+      (count (cute <> buffer) table)
+      (length table)))
+
+  (define (byte-heuristic address pred?)
+    (lambda (buf)
+      (if (< (dec (buffer-length buf)) address)
+        (error "not enough buffered data to apply heuristic")
+        (pred? (buffer-ref buf address)))))
+  
+  ; record length
+  (add (byte-heuristic 0 even?))
+  ; extended-attribute-record-length 
+  (add (byte-heuristic 1 zero?))
+
+  ; month
+  (add (byte-heuristic 19 (cute in-range? <> 1 12)))
+  ; day
+  (add (byte-heuristic 20 (cute in-range? <> 1 31)))
+  ; hour
+  (add (byte-heuristic 21 (cute in-range? <> 0 23)))
+  ; minute
+  (add (byte-heuristic 22 (cute in-range? <> 0 59)))
+  ; second
+  (add (byte-heuristic 23 (cute in-range? <> 0 59)))
+
+  ; flags: normal file or directory
+  (add 
     (byte-heuristic 25
       (lambda (x)
         (or (zero? x) (= x 2)))))
+   ;interleave-unit-size 
+  (add (byte-heuristic 26 zero?))
+  ; interleave-gap-size  
+  (add (byte-heuristic 27 zero?))
 
-  (define interleave-unit-size (byte-heuristic 26 zero?))
-  (define interleave-gap-size  (byte-heuristic 27 zero?))
+  ; volume-sequence: both endian word
+  (add (byte-heuristic 28 (cute = <> 1)))
+  (add (byte-heuristic 29 zero?))
+  (add (byte-heuristic 30 zero?))
+  (add (byte-heuristic 31 (cute = <> 1)))
 
-  (define volume-sequence-0 (byte-heuristic 28 (cute = <> 1)))
-  (define volume-sequence-1 (byte-heuristic 29 zero?))
-  (define volume-sequence-2 (byte-heuristic 30 zero?))
-  (define volume-sequence-4 (byte-heuristic 31 (cute = <> 1))))
+  (finalize))
