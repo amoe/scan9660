@@ -3,7 +3,9 @@
    for-each-sector)
 
   (import binary-io)
+
   (import lib)
+  (import data)
 
   (define sector-size 2048)
 
