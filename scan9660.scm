@@ -5,6 +5,7 @@
 
   (import lib)
   (import io)
+  (import data)
   (import heuristic)
 
   (define (scan9660 path)
@@ -14,5 +15,10 @@
   (define (scan-sector sector)
     (let ((p (apply-heuristics sector)))
       (if (= p 1)
-        (say "Found sector probably containing directory records")
-        (say "Skipping")))))
+        (begin
+          (say "Found sector probably containing directory records")
+          (for-each scan-directory-record (sector->directory-records sector)))
+        (say "Skipping sector"))))
+
+  (define (scan-directory-record record)
+    (say "Examining directory record")))

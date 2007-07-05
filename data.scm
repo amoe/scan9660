@@ -5,6 +5,8 @@
 
 (module data
   (both-endian-double-word?
+   sector->directory-records
+   buffer-slice
 
    make-sector  sector?
    :buffer :set-buffer!  :length :set-length!  :number :set-number!)
@@ -12,6 +14,8 @@
   (import srfi-1)
   (import srfi-8)
   (import srfi-9)
+
+  (import lib)
 
   ; We can't just pass buffers around and use buffer-length, because
   ; not enough data might have been read.  We could use buffer-copy! and
@@ -24,6 +28,27 @@
     (buffer :buffer :set-buffer!)
     (length :length :set-length!)
     (number :number :set-number!))
+
+  ; FIXME: add index out of bound checks
+  (define (sector->directory-records sector)
+    (define buf (:buffer sector))
+    
+    (define (loop start)
+      (let ((len (buffer-ref buf start)))
+        (if (zero? len)
+          '()
+          (cons
+            (buffer-slice buf start len)
+            (loop (+ start len))))))
+
+    (loop 0))
+
+  (define (buffer-slice buf offset length)
+    (if (zero? length)
+      '()
+      (cons
+        (buffer-ref buf offset)
+        (buffer-slice buf (inc offset) (dec length)))))
 
   (define (both-endian-double-word? lst)
     (and
