@@ -20,5 +20,9 @@
           (for-each scan-directory-record (sector->directory-records sector)))
         (say "Skipping sector"))))
 
-  (define (scan-directory-record record)
-    (say "Examining directory record")))
+  (define (scan-directory-record rec)
+    (import directory)
+
+    (say (format "Starting sector: ~a" (start rec)))
+    (say (format "Length in bytes: ~a" (length rec)))
+    (say (format "Identifier: ~a" (identifier rec)))))

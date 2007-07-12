@@ -7,6 +7,9 @@
   (both-endian-double-word?
    sector->directory-records
    buffer-slice
+   
+   both-endian-double-word->integer
+   list-slice
 
    make-sector  sector?
    :buffer :set-buffer!  :length :set-length!  :number :set-number!)
@@ -43,6 +46,9 @@
 
     (loop 0))
 
+  (define (list-slice lst start length)
+    (take (drop lst start) length))
+
   (define (buffer-slice buf offset length)
     (if (zero? length)
       '()
@@ -54,4 +60,21 @@
     (and
       (= (length lst) 8)
       (receive (le be) (split-at lst 4)
-        (list= = le (reverse be))))))
+        (list= = le (reverse be)))))
+
+  ; list of bytes => integer
+  (define (big-endian-double-word->integer lst)
+    (define (loop lst factor)
+      (if (null? (cdr lst))
+        (car lst)
+        (+
+          (arithmetic-shift (car lst) factor)
+          (loop (cdr lst) (/ factor 2)))))
+
+    (loop lst (* (length lst) 8)))
+
+  (define (both-endian-double-word->integer lst)
+    (big-endian-double-word->integer (take-right lst 4)))
+
+  (define (arithmetic-shift integer exponent)
+    (* integer (expt 2 exponent))))

@@ -28,6 +28,8 @@
           address)
         (pred? (buffer-ref (:buffer sector) address)))))
   
+  ; EXPRESSIONS START HERE
+  
   ; record length
   (add (byte-heuristic 0 even?))
   ; extended-attribute-record-length 
