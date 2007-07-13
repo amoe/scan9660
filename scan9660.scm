@@ -1,6 +1,7 @@
 (module scan9660
   (scan9660)
 
+  (import srfi-19)
   (import srfi-26)
 
   (import lib)
@@ -25,4 +26,6 @@
 
     (say (format "Starting sector: ~a" (start rec)))
     (say (format "Length in bytes: ~a" (length rec)))
+    ;(say (format "Date: ~a" (date->string (date rec) "~5")))
+    (say (format "Mtime: ~a" (time-second (date->time-monotonic (date rec)))))
     (say (format "Identifier: ~a" (identifier rec)))))
