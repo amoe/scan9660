@@ -7,6 +7,7 @@
 (load "lib.scm")
 (load "data.scm")
 (load "heuristic.scm")
+(load "file-info.scm")
 (load "directory.scm")
 (load "io.scm")
 (load "scan9660.scm")

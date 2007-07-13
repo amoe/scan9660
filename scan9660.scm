@@ -23,9 +23,6 @@
 
   (define (scan-directory-record rec)
     (import directory)
+    (import file-info)
 
-    (say (format "Starting sector: ~a" (start rec)))
-    (say (format "Length in bytes: ~a" (length rec)))
-    ;(say (format "Date: ~a" (date->string (date rec) "~5")))
-    (say (format "Mtime: ~a" (time-second (date->time-monotonic (date rec)))))
-    (say (format "Identifier: ~a" (identifier rec)))))
+    (display (pretty-print (directory->file-info rec)))))
