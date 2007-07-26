@@ -7,6 +7,7 @@
   (both-endian-double-word?
    sector->directory-records
    buffer-slice
+   null-sector?
    
    both-endian-double-word->integer
    list-slice
@@ -55,6 +56,9 @@
       (cons
         (buffer-ref buf offset)
         (buffer-slice buf (inc offset) (dec length)))))
+
+  (define (null-sector? sector)
+    (every zero? (buffer-slice (:buffer sector) 0 (:length sector))))
 
   (define (both-endian-double-word? lst)
     (and
