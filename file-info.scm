@@ -10,6 +10,7 @@
 (module file-info
   (make-file-info
    :start
+   :length
    :identifier
    pretty-print)
 

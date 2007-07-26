@@ -10,9 +10,10 @@
   (import srfi-19)
 
   (import data)
-  (import file-info)
 
   (define (directory->file-info rec)
+    (import file-info)
+
     (make-file-info
       (identifier rec)
       (date rec)
