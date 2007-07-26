@@ -10,6 +10,7 @@
 (module file-info
   (make-file-info
    :start
+   :identifier
    pretty-print)
 
   (import srfi-9)

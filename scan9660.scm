@@ -2,6 +2,7 @@
   (scan9660
    file-table)
 
+  (import srfi-1)
   (import srfi-19)
   (import srfi-26)
 
@@ -9,6 +10,7 @@
   (import io)
   (import data)
   (import heuristic)
+  (import file-info)
 
   (define file-table '())
 
@@ -16,10 +18,15 @@
     (call-with-binary-input-file path
       (cut for-each-sector scan-sector <>)))
 
+  (define (table-searcher n)
+    (lambda (f)
+      (eqv? n (:start f))))
+
   (define (scan-sector sector)
-    (if (memv (:number sector) file-table)
-      (salvage-sector sector)
-      (heuristic-scan sector)))
+    (let ((f (find (table-searcher (:number sector)) file-table)))
+      (if f
+        (salvage-sector sector f)
+        (heuristic-scan sector))))
 
   (define (heuristic-scan sector)
     (let ((p (apply-heuristics sector)))
@@ -30,13 +37,19 @@
         ;(say "Skipping sector"))))
         #f)))
 
-  (define (salvage-sector sector)
+  (define (salvage-sector sector f)
     (cond
       ((null-sector? sector)
-        (say (format "Not salvaging null sector ~a" (:number sector))))
+        (say
+          (format "Not salvaging null sector ~a (~a)"
+            (:number sector)
+            (:identifier f))))
 
       (else
-        (say (format "Salvaging sector: ~a" (:number sector)))
+        (say
+          (format "Salvaging sector: ~a (~a)"
+            (:number sector)
+            (:identifier f)))
 
         (call-with-binary-output-file (format "sector/~a.data" (:number sector))
           (lambda (port)
@@ -46,6 +59,6 @@
     (import directory)
     (import file-info)
 
-    (set! file-table (cons (:start (directory->file-info rec)) file-table))))
+    (set! file-table (cons (directory->file-info rec) file-table))))
 
     ;(display (pretty-print (directory->file-info rec)))))
