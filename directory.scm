@@ -1,25 +1,30 @@
 ; FIXME.  Would be better to treat records as vectors since we are randomly
 ; accessing them.
-
-; Please note that this does NOT represent a directory - just a directory RECORD.
+; Please note that this does NOT represent a directory - just a
+; directory RECORD (under 9660 terminology).
 ; It's more likely to represent a file.
 
 (module directory
-  (directory->file-info)
+  (directory->job)
 
+  (import srfi-13)
   (import srfi-19)
 
+  (import io)
   (import data)
+  (import schedule)
 
-  (define (directory->file-info rec)
-    (import file-info)
+  (define (directory->job rec)
+    (let ((s (start rec))  (l (length rec)))
+      (make-job
+        (munge-identifier (identifier rec))
+        (date->time-monotonic (date rec))
+        s
+        (+ s (quotient l sector-size))
+        (remainder l sector-size))))
 
-    (make-file-info
-      (identifier rec)
-      (date rec)
-      (start rec)
-      (length rec)
-      (type rec)))
+  (define (munge-identifier id)
+    (string-downcase id))
 
   (define (start rec)
     (both-endian-double-word->integer (list-slice rec 2 8)))
