@@ -16,7 +16,12 @@
     (call-with-binary-input-file path
       (cut for-each-sector scan-sector <>)))
 
+  ; THE PROBLEM: Directory records refer to their own sectors.
+  ; THE CAUSE: Directory records for '.', '..', and other things.
+  ; THE SOLUTION: Ignore all jobs scheduled for directories for the moment.
+
   (define (scan-sector sector)
+    ;(say (format "Scanning sector: ~a"  (:number sector)))
     (let ((job (scheduled (:number sector))))
       (if job
         (salvage-sector sector job)
@@ -30,20 +35,45 @@
           (for-each scan-directory-record (sector->directory-records sector)))
         #f)))
 
-  (define (salvage-sector sector job)
-    (define (msg s j)
-      (format "~a (~a)" (:number s) (:path j)))
-    
-    (cond
-      ((null-sector? sector)
-        (say (format "Not salvaging null sector: ~a" (msg sector job))))
+  (define (maybe-open-file n job)
+    (when (= n (:first job))
+      (say "Opening file")
+      ; It's buffered, so remember to flush it
+      (:set-port! job
+        (open-buffered-binary-output-port
+          (open-binary-output-file
+            (format "sector/~a" (:path job)))))))
 
+  (define (write-sector sector job)
+    (let ((n (:number sector)) (buf (:buffer sector))  (port (:port job)))
+      (cond
+        ((= n (:last job))    ; the final sector
+          (say
+            (format "Sector ~a, last sector ~a, first ~a, tail ~a"
+              n (:last job) (:first job) (:tail job)))
+          ; For some reason writing this produces nothing in the files.
+          ; It works if you write blocks using call-with-binary-output-file
+          ; instead.  Suggesting it may be a cleanup issue; the output is not
+          ; getting flushed.
+          (write-block buf 0 (:tail job) port)
+          (flush-output-port port)
+          (:set-port! job #f))  ; FIXME: does this get GCed and closed?
+        (else
+          (write-block buf 0 (:length sector) port)))))
+
+    (define (salvage-sector sector job)
+      (define (msg s j)
+        (format "~a (~a)" (:number s) (:path j)))
+
+      (say "Maybe opening file")
+      (maybe-open-file (:number sector) job)
+      
+      (cond
+        ((null-sector? sector)
+          (say (format "Not salvaging null sector: ~a" (msg sector job))))
       (else
         (say (format "Salvaging sector: ~a" (msg sector job)))
-
-        (call-with-binary-output-file (format "sector/~a.data" (:number sector))
-          (lambda (port)
-            (write-block (:buffer sector) 0 (:length sector) port))))))
+        (write-sector sector job))))
 
   (define (scan-directory-record rec)
     (schedule! (directory->job rec))))

@@ -20,6 +20,7 @@
       (make-job
         (munge (identifier rec))
         (date->time-monotonic (date rec))
+        (type rec)
         s
         (+ s (quotient l sector-size))
         (remainder l sector-size))))

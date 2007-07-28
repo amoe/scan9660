@@ -3,6 +3,7 @@
 (module munger
   (munge)
 
+  (import srfi-1)
   (import srfi-13)
 
   (define (munge id)

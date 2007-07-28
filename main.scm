@@ -20,7 +20,7 @@
 
 (define (test)
   (import scan9660)
-  (scan9660 "/home/amoe/dev/scheme/scan9660/test.iso"))
+  (scan9660 "/home/amoe/dev/scheme/scan9660/cowgirl.iso"))
 
 (define main (lambda args #t))
 

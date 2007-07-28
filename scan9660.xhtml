@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+          "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>scan9660</title>
+    <link rel="stylesheet" href="amoe.css" type="text/css"/>
+  </head>
+  <body>
+    <h1>scan9660</h1>
+
+    <p>Do you have a very old data CD, with extremely valuable
+    information on it that has accidentally been very badly damaged?
+    Due to extreme negligence, do you also have no other backups of
+    this information?  In addition, is the very start of the disc
+    damaged, meaning the filesystem can't even be mounted?  Is the
+    filesystem ISO9660?  Then congratulations, this is the tool for you!</p>
+
+    <p>scan9660 uses a heuristic search to look for directory records
+    on ISO9660 images.  It then extracts any available information
+    from the disk and loosely recreates the file structure on your
+    local disk.  It is best used in combination with
+    <a href="http://www.gnu.org/software/ddrescue/ddrescue.html">ddrescue</a>
+    in order to read as much of the relevant image as possible.</p>
+
+    <p>scan9660 is written
+    in <a href="http://www.sisc-scheme.org/">SISC</a> Scheme.  SISC
+    users can run it with this command line:</p>
+
+    <blockquote><kbd>sisc -c main
+    main.scm <var>args</var></kbd></blockquote>
+  </body>
+</html>

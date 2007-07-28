@@ -3,6 +3,9 @@
    :first
    :last
    :path
+   :port
+   :set-port!
+   :tail
 
    scheduled
    schedule!)
@@ -18,8 +21,10 @@
       (lambda (j) (and (>= sn (:first j)) (<= sn (:last j))))
       jobs))
 
+  ; throw away directory jobs for the moment
   (define (schedule! job)
-    (set! jobs (cons job jobs)))
+    (when (zero? (:type job)) ; as long as it is a regular file
+      (set! jobs (cons job jobs))))
 
   ; Further processed info.
   ; port is an open or closed binary output stream.
@@ -33,11 +38,12 @@
   ; LAST is
   ; (+ start (quotient length sector-size))
   (define-record-type <job>
-    (make-job path mtime first last tail)
+    (make-job path mtime type first last tail)
     job?
     (port  :port  :set-port!)
     (path  :path  :set-path!)
     (mtime :mtime :set-mtime!)
+    (type  :type  :set-type!)
     (first :first :set-first!)
     (last  :last  :set-last!)
     (tail  :tail  :set-tail!)))
