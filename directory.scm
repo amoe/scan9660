@@ -12,19 +12,17 @@
 
   (import io)
   (import data)
+  (import munger)
   (import schedule)
 
   (define (directory->job rec)
     (let ((s (start rec))  (l (length rec)))
       (make-job
-        (munge-identifier (identifier rec))
+        (munge (identifier rec))
         (date->time-monotonic (date rec))
         s
         (+ s (quotient l sector-size))
         (remainder l sector-size))))
-
-  (define (munge-identifier id)
-    (string-downcase id))
 
   (define (start rec)
     (both-endian-double-word->integer (list-slice rec 2 8)))

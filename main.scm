@@ -8,6 +8,7 @@
 (load "lib.scm")
 (load "data.scm")
 (load "heuristic.scm")
+(load "munger.scm")
 (load "io.scm")
 (load "schedule.scm")
 (load "directory.scm")
