@@ -29,5 +29,15 @@
 
     <blockquote><kbd>sisc -c main
     main.scm <var>args</var></kbd></blockquote>
+
+    <p>Before resorting to using scan9660, make sure you use
+    ddrescue.  The image may be mountable through normal means on the
+    loopback device.  To be sure you've retrieved as much of the image
+    as possible, repeatedly run ddrescue with the <kbd>-r 1</kbd>
+    option, examining the error count each time.  When the error count
+    doesn't change anymore, the maximum amount of data has been
+    retrieved from the CD.  See also my
+    script <code>iterative_rescue.sh</code>, which automates this
+    process.</p>
   </body>
 </html>
